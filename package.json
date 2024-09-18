@@ -2,6 +2,7 @@
   "name": "vercel-blob-uploader",
   "version": "1.0.0",
   "description": "Upload blobs to Vercel Blob Storage from the command line",
+  "repository": "https://github.com/charlesinwald/vercel-blob-uploader",
   "main": "index.js",
   "bin": {
     "vercel-blob-uploader": "./index.js"
