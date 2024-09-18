@@ -1,0 +1,30 @@
+{
+  "name": "vercel-blob-uploader",
+  "version": "1.0.0",
+  "description": "Upload blobs to Vercel Blob Storage from the command line",
+  "main": "index.js",
+  "bin": {
+    "vercel-blob-uploader": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "vercel",
+    "blob",
+    "uploader",
+    "upload",
+    "node",
+    "command",
+    "line"
+  ],
+  "author": "Charles Inwald",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/blob": "^0.24.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
+  }
+}
