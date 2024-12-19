@@ -2,7 +2,7 @@
 const { Command } = require('commander');
 const fs = require('fs');
 const path = require('path');
-const { put } = require('@vercel/blob');
+const { put, list } = require('@vercel/blob');
 
 // No need to rely on dotenv for production use if env vars are already set
 require('dotenv').config();  // Only needed in development or testing environments
@@ -10,20 +10,80 @@ require('dotenv').config();  // Only needed in development or testing environmen
 const program = new Command();
 
 program
-  .version('1.0.0')
-  .description('CLI for uploading blobs to Vercel Blob Storage using put()')
-  .option('-f, --file <paths...>', 'File paths or directory to upload') // Allow multiple file paths or a directory
+  .name('blob-cli')
+  .description('CLI for managing Vercel Blob Storage')
+  .version('1.0.0');
+
+// Upload command
+program.command('upload')
+  .description('Upload files to Vercel Blob Storage')
+  .option('-f, --file <paths...>', 'File paths or directory to upload')
   .option('-p, --pathname <pathname>', 'Pathname to use for the upload (optional)')
   .option('--multipart', 'Enable multipart upload for large files')
   .option('--urls-only', 'Show only the resulting URLs (useful for pipelines)')
-  .parse(process.argv);
+  .action(async (options) => {
+    if (!options.file) {
+      console.error('Please specify one or more files or a directory using the -f option');
+      process.exit(1);
+    }
+    await handleFilesOrDirectory(options.file, options.pathname, options.multipart, options.urlsOnly);
+  });
 
-const options = program.opts();
+// Download command
+program.command('download')
+  .description('Download files from Vercel Blob Storage')
+  .option('-p, --prefix <prefix>', 'Prefix to filter files (optional)')
+  .option('-o, --output <dir>', 'Output directory (defaults to current directory)', '.')
+  .action(async (options) => {
+    const vercelToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!vercelToken) {
+      console.error('Vercel token is missing. Please set the BLOB_READ_WRITE_TOKEN environment variable.');
+      process.exit(1);
+    }
 
-if (!options.file) {
-  console.error('Please specify one or more files or a directory using the -f option');
-  process.exit(1);
-}
+    try {
+      const { blobs } = await list({ token: vercelToken, prefix: options.prefix });
+      
+      if (blobs.length === 0) {
+        console.log('No files found in blob storage');
+        return;
+      }
+
+      const outputDir = path.resolve(options.output);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      for (const blob of blobs) {
+        try {
+          const response = await fetch(blob.url);
+          if (!response.ok) {
+            console.error(`Failed to download: ${blob.pathname}`);
+            continue;
+          }
+
+          const filePath = path.join(outputDir, blob.pathname);
+          const fileDir = path.dirname(filePath);
+
+          if (!fs.existsSync(fileDir)) {
+            fs.mkdirSync(fileDir, { recursive: true });
+          }
+
+          const buffer = Buffer.from(await response.arrayBuffer());
+          fs.writeFileSync(filePath, buffer);
+          console.log(`Downloaded: ${blob.pathname}`);
+        } catch (error) {
+          console.error(`Error downloading ${blob.pathname}:`, error.message);
+        }
+      }
+
+      console.log('Download complete!');
+    } catch (error) {
+      console.error('Error downloading files:', error.message);
+    }
+  });
+
+program.parse();
 
 // Function to upload the file using put from @vercel/blob
 async function uploadFile(filePath, pathname, multipart, urlsOnly) {
@@ -90,6 +150,3 @@ async function handleFilesOrDirectory(filesOrDirs, pathname, multipart, urlsOnly
     }
   }
 }
-
-// Call the function to handle files or directories
-handleFilesOrDirectory(options.file, options.pathname, options.multipart, options.urlsOnly);
