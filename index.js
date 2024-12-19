@@ -108,14 +108,15 @@ async function uploadFile(filePath, pathname, multipart, urlsOnly) {
 
     // Read the file as a binary buffer or stream
     const fileBuffer = fs.readFileSync(absolutePath);
-    const fileType = path.extname(absolutePath).slice(1) || 'application/octet-stream'; // Guess file type
+    const fileType = path.extname(absolutePath).slice(1) || 'application/octet-stream';
 
-    // Perform the PUT request with multipart option
+    // Added addRandomSuffix: false to prevent random suffixes
     const result = await put(inferredPathname, fileBuffer, {
       access: 'public',
       contentType: fileType,
       token: vercelToken,
-      multipart: multipart || false, // Enable multipart if specified
+      multipart: multipart || false,
+      addRandomSuffix: false  // This prevents the random suffix
     });
 
     // If --urls-only is set, print only the URLs
