@@ -137,16 +137,46 @@ async function handleFilesOrDirectory(filesOrDirs, pathname, multipart, urlsOnly
   for (const fileOrDir of filesOrDirs) {
     const absolutePath = path.resolve(fileOrDir);
 
-    // Check if it's a directory
-    if (fs.statSync(absolutePath).isDirectory()) {
-      // Get all files in the directory
-      const files = fs.readdirSync(absolutePath).filter(file => fs.statSync(path.join(absolutePath, file)).isFile());
-      for (const file of files) {
-        await uploadFile(path.join(absolutePath, file), pathname, multipart, urlsOnly);
+    try {
+      // Check if path exists first
+      if (!fs.existsSync(absolutePath)) {
+        console.error(`Path does not exist: ${absolutePath}`);
+        continue;
       }
-    } else {
-      // It's a file, upload it directly
-      await uploadFile(absolutePath, pathname, multipart, urlsOnly);
+
+      const stats = fs.statSync(absolutePath);
+      
+      // Check if it's a directory
+      if (stats.isDirectory()) {
+        // Get all files in the directory recursively
+        const files = getAllFiles(absolutePath);
+        for (const file of files) {
+          // Use relative path from the base directory as pathname
+          const relativePathname = path.relative(absolutePath, file);
+          await uploadFile(file, relativePathname, multipart, urlsOnly);
+        }
+      } else {
+        // It's a file, upload it directly
+        await uploadFile(absolutePath, pathname, multipart, urlsOnly);
+      }
+    } catch (error) {
+      console.error(`Error processing ${absolutePath}:`, error.message);
     }
   }
+}
+
+// Helper function to get all files recursively
+function getAllFiles(dirPath, arrayOfFiles = []) {
+  const files = fs.readdirSync(dirPath);
+
+  files.forEach(file => {
+    const filePath = path.join(dirPath, file);
+    if (fs.statSync(filePath).isDirectory()) {
+      getAllFiles(filePath, arrayOfFiles);
+    } else {
+      arrayOfFiles.push(filePath);
+    }
+  });
+
+  return arrayOfFiles;
 }
