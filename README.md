@@ -1,4 +1,4 @@
-# Vercel Blob CLI
+# Vercel Blob CLI (Local Development)
 
 A command-line interface (CLI) tool for managing files in Vercel Blob Storage using the [@vercel/blob](https://www.npmjs.com/package/@vercel/blob) package. This tool supports both uploading and downloading files, multipart uploads for large files, and can be used in automation pipelines to output the resulting URLs.
 
@@ -14,116 +14,146 @@ A command-line interface (CLI) tool for managing files in Vercel Blob Storage us
   - Download files to a specified output directory
 - Uses the `BLOB_READ_WRITE_TOKEN` environment variable for authentication
 
-## Installation
+---
 
-### Global Installation
+## Setup Instructions
 
-Install the CLI tool globally:
+To use this CLI locally, follow these steps:
 
-```bash
-npm install -g vercel-blob-cli
-```
+### 1. Clone the Repository
 
-### Local Installation (for development)
-
-If you want to test the tool locally before publishing, you can use `npm link`:
+Clone this repository to your local machine:
 
 ```bash
-npm link
+git clone https://github.com/your-repo-name.git
+cd your-repo-name
 ```
 
-## Usage
+### 2. Install Dependencies
 
-Once installed globally, you can run the CLI using the command `blob-cli`.
-
-### Upload Files
-
-#### Basic Usage
+Run the following command to install the required dependencies:
 
 ```bash
-blob-cli upload --file ./path/to/file.txt --multipart
+npm install
 ```
 
-#### Upload Multiple Files
+### 3. Create a `.env` File
 
-You can specify multiple files to upload:
+1. In the root directory of the project, create a file named `.env`.
+2. Add the following line, replacing `your-vercel-token` with your actual Vercel token:
 
-```bash
-blob-cli upload --file ./file1.txt ./file2.txt --multipart
-```
+   ```plaintext
+   BLOB_READ_WRITE_TOKEN=your-vercel-token
+   ```
 
-#### Upload All Files in a Directory
-
-To upload all files in a directory:
-
-```bash
-blob-cli upload --file ./my-directory --multipart
-```
-
-#### Show Only URLs (for Pipelines)
-
-If you only want the output to show the URLs of the uploaded files (useful for pipelines or scripts), use the `--urls-only` flag:
-
-```bash
-blob-cli upload --file ./file1.txt ./file2.txt --urls-only
-```
-
-#### Example in a Pipeline
-
-You can capture the output and use it in your automation pipelines:
-
-```bash
-file_urls=$(blob-cli upload --file ./file1.txt ./file2.txt --urls-only)
-echo "Uploaded files are available at: $file_urls"
-```
-
-#### Upload Options
-
-- `-f, --file <paths...>`: File paths or directories to upload. You can specify multiple files or directories.
-- `-p, --pathname <pathname>`: The pathname to use for the upload. If not provided, it defaults to the filename.
-- `--multipart`: Enable multipart uploads for large files.
-- `--urls-only`: Only output the resulting URLs (useful for automation pipelines).
+3. Save the file.
 
 ---
 
-### Download Files
+## Usage
 
-#### Basic Usage
+Run the CLI using `node index.js` followed by the desired command.
+
+### Commands and Examples
+
+#### 1. **Upload Files**
+
+Uploads files or directories to Vercel Blob Storage.
+
+- Upload a single file:
+  ```bash
+  node index.js upload --file ./path/to/file.txt
+  ```
+
+- Upload multiple files:
+  ```bash
+  node index.js upload --file ./file1.txt ./file2.txt
+  ```
+
+- Upload all files in a directory:
+  ```bash
+  node index.js upload --file ./my-directory
+  ```
+
+- Show only resulting URLs:
+  ```bash
+  node index.js upload --file ./file1.txt --urls-only
+  ```
+
+#### 2. **Download Files**
+
+Downloads files from Vercel Blob Storage to a specified directory.
+
+- Download all files with a specific prefix:
+  ```bash
+  node index.js download --prefix your-prefix --output ./downloads
+  ```
+
+- Download all files to the current directory:
+  ```bash
+  node index.js download --prefix your-prefix
+  ```
+
+- Specify a custom output directory:
+  ```bash
+  node index.js download --prefix your-prefix --output ./custom-dir
+  ```
+
+#### 3. **View CLI Help**
+
+Displays the available commands and options.
 
 ```bash
-blob-cli download --prefix your-prefix --output ./output-directory
+node index.js --help
 ```
 
-#### Download Options
+#### 4. **View CLI Version**
 
-- `-p, --prefix <prefix>`: Prefix to filter files in blob storage. Files matching the prefix will be downloaded.
-- `-o, --output <dir>`: Output directory for the downloaded files. Defaults to the current directory (`.`).
+Displays the current version of the CLI.
+
+```bash
+node index.js --version
+```
+
+---
+
+## Command Options
+
+### Upload Options:
+- `-f, --file <paths...>`: File paths or directories to upload. Multiple files or directories can be specified.
+- `-p, --pathname <pathname>`: Custom pathname for the upload (optional).
+- `--multipart`: Enable multipart uploads for large files.
+- `--urls-only`: Only output the resulting URLs (useful for automation pipelines).
+
+### Download Options:
+- `-p, --prefix <prefix>`: Filter files by prefix in blob storage (optional).
+- `-o, --output <dir>`: Output directory for downloaded files. Defaults to the current directory (`.`).
+
+---
+
+## Development
+
+### Testing Locally
+
+1. Make your changes to the code in `index.js`.
+2. Run commands locally using `node index.js` to test your changes.
 
 ---
 
 ## Environment Variables
 
-The CLI requires a `BLOB_READ_WRITE_TOKEN` to be set in your environment for authentication. You can set it as follows:
+The CLI requires a `BLOB_READ_WRITE_TOKEN` to be set in your environment for authentication. You can set it by creating a `.env` file as described above or directly in your terminal:
 
 ```bash
 export BLOB_READ_WRITE_TOKEN=your-vercel-token
 ```
 
-Alternatively, you can pass the token in a single command:
-
-```bash
-BLOB_READ_WRITE_TOKEN=your-vercel-token blob-cli upload --file ./file.txt
-```
-
-## Development
-
-1. Clone the repository.
-2. Run `npm install` to install dependencies.
-3. Use `npm link` to link the project for local testing.
-4. Modify the code and test the CLI.
+---
 
 ## License
 
 MIT License
 
-This README now reflects the added `download` functionality and clearly distinguishes it from the upload capabilities.
+---
+
+This README now fully reflects a **local development workflow**, removing any references to global installation or `blob-cli`. It emphasizes running commands with `node index.js`.
