@@ -1,51 +1,73 @@
 #!/usr/bin/env node
-const { Command } = require('commander');
-const fs = require('fs');
-const path = require('path');
-const { put, list } = require('@vercel/blob');
+const { Command } = require("commander");
+const fs = require("fs");
+const path = require("path");
+const { put, list } = require("@vercel/blob");
+const mime = require("mime-types");
 
 // No need to rely on dotenv for production use if env vars are already set
-require('dotenv').config();  // Only needed in development or testing environments
+require("dotenv").config(); // Only needed in development or testing environments
 
 const program = new Command();
 
 program
-  .name('blob-cli')
-  .description('CLI for managing Vercel Blob Storage')
-  .version('1.0.0');
+  .name("blob-cli")
+  .description("CLI for managing Vercel Blob Storage")
+  .version("1.0.0");
 
 // Upload command
-program.command('upload')
-  .description('Upload files to Vercel Blob Storage')
-  .option('-f, --file <paths...>', 'File paths or directory to upload')
-  .option('-p, --pathname <pathname>', 'Pathname to use for the upload (optional)')
-  .option('--multipart', 'Enable multipart upload for large files')
-  .option('--urls-only', 'Show only the resulting URLs (useful for pipelines)')
+program
+  .command("upload")
+  .description("Upload files to Vercel Blob Storage")
+  .option("-f, --file <paths...>", "File paths or directory to upload")
+  .option(
+    "-p, --pathname <pathname>",
+    "Pathname to use for the upload (optional)"
+  )
+  .option("--multipart", "Enable multipart upload for large files")
+  .option("--urls-only", "Show only the resulting URLs (useful for pipelines)")
   .action(async (options) => {
     if (!options.file) {
-      console.error('Please specify one or more files or a directory using the -f option');
+      console.error(
+        "Please specify one or more files or a directory using the -f option"
+      );
       process.exit(1);
     }
-    await handleFilesOrDirectory(options.file, options.pathname, options.multipart, options.urlsOnly);
+    await handleFilesOrDirectory(
+      options.file,
+      options.pathname,
+      options.multipart,
+      options.urlsOnly
+    );
   });
 
 // Download command
-program.command('download')
-  .description('Download files from Vercel Blob Storage')
-  .option('-p, --prefix <prefix>', 'Prefix to filter files (optional)')
-  .option('-o, --output <dir>', 'Output directory (defaults to current directory)', '.')
+program
+  .command("download")
+  .description("Download files from Vercel Blob Storage")
+  .option("-p, --prefix <prefix>", "Prefix to filter files (optional)")
+  .option(
+    "-o, --output <dir>",
+    "Output directory (defaults to current directory)",
+    "."
+  )
   .action(async (options) => {
     const vercelToken = process.env.BLOB_READ_WRITE_TOKEN;
     if (!vercelToken) {
-      console.error('Vercel token is missing. Please set the BLOB_READ_WRITE_TOKEN environment variable.');
+      console.error(
+        "Vercel token is missing. Please set the BLOB_READ_WRITE_TOKEN environment variable."
+      );
       process.exit(1);
     }
 
     try {
-      const { blobs } = await list({ token: vercelToken, prefix: options.prefix });
-      
+      const { blobs } = await list({
+        token: vercelToken,
+        prefix: options.prefix,
+      });
+
       if (blobs.length === 0) {
-        console.log('No files found in blob storage');
+        console.log("No files found in blob storage");
         return;
       }
 
@@ -77,9 +99,9 @@ program.command('download')
         }
       }
 
-      console.log('Download complete!');
+      console.log("Download complete!");
     } catch (error) {
-      console.error('Error downloading files:', error.message);
+      console.error("Error downloading files:", error.message);
     }
   });
 
@@ -90,7 +112,9 @@ async function uploadFile(filePath, pathname, multipart, urlsOnly) {
   const vercelToken = process.env.BLOB_READ_WRITE_TOKEN;
 
   if (!vercelToken) {
-    console.error('Vercel token is missing. Please set the BLOB_READ_WRITE_TOKEN environment variable.');
+    console.error(
+      "Vercel token is missing. Please set the BLOB_READ_WRITE_TOKEN environment variable."
+    );
     process.exit(1);
   }
 
@@ -108,15 +132,15 @@ async function uploadFile(filePath, pathname, multipart, urlsOnly) {
 
     // Read the file as a binary buffer or stream
     const fileBuffer = fs.readFileSync(absolutePath);
-    const fileType = path.extname(absolutePath).slice(1) || 'application/octet-stream';
+    const contentType = mime.lookup(absolutePath) || "application/octet-stream";
 
     // Added addRandomSuffix: false to prevent random suffixes
     const result = await put(inferredPathname, fileBuffer, {
-      access: 'public',
-      contentType: fileType,
+      access: "public",
+      contentType: contentType,
       token: vercelToken,
       multipart: multipart || false,
-      addRandomSuffix: false  // This prevents the random suffix
+      addRandomSuffix: false, // This prevents the random suffix
     });
 
     // If --urls-only is set, print only the URLs
@@ -125,8 +149,8 @@ async function uploadFile(filePath, pathname, multipart, urlsOnly) {
     } else {
       // Print full output with URLs and other details
       console.log(`File uploaded successfully: ${absolutePath}`);
-      console.log('URL:', result.url);
-      console.log('Download URL:', result.downloadUrl);
+      console.log("URL:", result.url);
+      console.log("Download URL:", result.downloadUrl);
     }
   } catch (error) {
     console.error(`Error uploading file ${filePath}:`, error.message);
@@ -134,7 +158,12 @@ async function uploadFile(filePath, pathname, multipart, urlsOnly) {
 }
 
 // Function to handle multiple files or directory
-async function handleFilesOrDirectory(filesOrDirs, pathname, multipart, urlsOnly) {
+async function handleFilesOrDirectory(
+  filesOrDirs,
+  pathname,
+  multipart,
+  urlsOnly
+) {
   for (const fileOrDir of filesOrDirs) {
     const absolutePath = path.resolve(fileOrDir);
 
@@ -146,7 +175,7 @@ async function handleFilesOrDirectory(filesOrDirs, pathname, multipart, urlsOnly
       }
 
       const stats = fs.statSync(absolutePath);
-      
+
       // Check if it's a directory
       if (stats.isDirectory()) {
         // Get all files in the directory recursively
@@ -170,7 +199,7 @@ async function handleFilesOrDirectory(filesOrDirs, pathname, multipart, urlsOnly
 function getAllFiles(dirPath, arrayOfFiles = []) {
   const files = fs.readdirSync(dirPath);
 
-  files.forEach(file => {
+  files.forEach((file) => {
     const filePath = path.join(dirPath, file);
     if (fs.statSync(filePath).isDirectory()) {
       getAllFiles(filePath, arrayOfFiles);
