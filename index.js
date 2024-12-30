@@ -200,6 +200,11 @@ function getAllFiles(dirPath, arrayOfFiles = []) {
   const files = fs.readdirSync(dirPath);
 
   files.forEach((file) => {
+    // Skip hidden files and directories (starting with a dot)
+    if (file.startsWith(".")) {
+      return;
+    }
+
     const filePath = path.join(dirPath, file);
     if (fs.statSync(filePath).isDirectory()) {
       getAllFiles(filePath, arrayOfFiles);
